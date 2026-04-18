@@ -20,8 +20,11 @@ const App = () => {
 
   useEffect(()=>{
     checkAuth()
-
   },[checkAuth])
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   console.log({authUser});
 
@@ -34,7 +37,7 @@ const App = () => {
 
   
   return (
-      <div data-theme={theme}>
+      <div>
         <Navbar />
 
 
