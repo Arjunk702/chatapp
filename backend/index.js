@@ -6,6 +6,7 @@ import messageRoutes from "./routes/message.route.js";
 import { connectDB } from "./lib/db.js";
 import cors from "cors";
 import { app, server } from "./lib/socket.js";
+import { isOriginAllowed } from "./lib/config.js";
 
 dotenv.config();
 
@@ -14,17 +15,17 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
-// app.use(
-//   cors({
-//     origin: "http://localhost:5173",
-//     credentials: true,
-//   })
-// );
 
-app.use(cors({
-  origin: 'https://chatapp-a1vu.vercel.app',
-  credentials: true
-}));
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (isOriginAllowed(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // Routes
 app.use("/api/auth", authRoutes);

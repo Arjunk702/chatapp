@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken"
 import User from "../models/user.model.js"
+import { jwtSecret } from "../lib/config.js";
 
 
 export const protectRoute = async (req,res,next) =>{
@@ -10,7 +11,11 @@ export const protectRoute = async (req,res,next) =>{
             return res.status(401).json({message:"Unauthorized - No token provided"})
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECERET)
+        if (!jwtSecret) {
+            return res.status(500).json({ message: "Server misconfigured (missing JWT secret)" });
+        }
+
+        const decoded = jwt.verify(token, jwtSecret)
 
         if(!decoded){
             return res.status(401).json({message:"Unauthorized - Token Invalid"})

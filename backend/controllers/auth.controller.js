@@ -3,13 +3,14 @@ import { generateToken } from "../lib/utils.js"
 import User from "../models/user.model.js"
 import bcrypt from "bcryptjs"
 import cloudinary from "../lib/cloudinary.js"
+import { isProduction } from "../lib/config.js";
 
 
 export const signup = async (req,res) =>{
     const {fullName,email,password} = req.body
 try {
     if(!fullName || !email || !password){
-        return res.staus(400).json({message:"all fields are required"})
+        return res.status(400).json({message:"all fields are required"})
     }
     if(password.length<6){
         return res.status (400).json({message:"password must be at least 6 characters"})
@@ -94,7 +95,11 @@ export const login = async (req,res) =>{
 }
 export const logout = (req,res) =>{
  try {
-    res.cookie("jwt", "", {maxAge: 0})
+    res.clearCookie("jwt", {
+        httpOnly: true,
+        sameSite: isProduction ? "none" : "lax",
+        secure: isProduction,
+    });
     res.status(200).json({message:"logout successfully"})
  } catch (error) {
     console.log("Error in login controller",error.message);
@@ -110,7 +115,7 @@ export const updateProfile = async (req,res) =>{
         const userId= req.user._id;
 
         if(!profilePic){
-            return res.staus(400).json({message:"profile pic is required"})
+            return res.status(400).json({message:"profile pic is required"})
         }
     const uploadResponse= await cloudinary.uploader.upload(profilePic)
     const updatedUser = await User.findByIdAndUpdate(userId,{profilePic:uploadResponse.secure_url},{new:true})
