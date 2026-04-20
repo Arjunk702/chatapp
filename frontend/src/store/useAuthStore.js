@@ -3,7 +3,11 @@ import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const BASE_URL = "http://localhost:5001"
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL ||
+  (import.meta.env.PROD
+    ? "https://chatapp-1-pdro.onrender.com"
+    : "http://localhost:5001");
 
 export const useAuthStore = create((set,get) => ({
     authUser: null,
@@ -84,17 +88,18 @@ export const useAuthStore = create((set,get) => ({
     },
 
     connectSocket: () =>{
-        const {authUser} = get ()
-        if(!authUser || get().socket?.connected) return;
-        const socket = io(BASE_URL)
-        socket.connect()
+        const { authUser, socket } = get();
+        if (!authUser || socket?.connected) return;
 
-
-
+        const newSocket = io(SOCKET_URL, { withCredentials: true });
+        set({ socket: newSocket });
      }
-    // disconnectSocket: () =>{
-
-    // }
+    ,
+    disconnectSocket: () => {
+        const { socket } = get();
+        if (socket) socket.disconnect();
+        set({ socket: null });
+    }
 
 
 }));
