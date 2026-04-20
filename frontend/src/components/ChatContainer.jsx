@@ -1,27 +1,49 @@
-import { useChatStore } from "../store/useChatStore";
 import { useEffect, useRef } from "react";
+import { useAuthStore } from "../store/useAuthStore";
+import { useChatStore } from "../store/useChatStore";
+import { formatMessageTime } from "../utils/formatMessageTime";
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
-import { useAuthStore } from "../store/useAuthStore";
-import { formatMessageTime } from "../utils/formatMessageTime";
 
 const ChatContainer = () => {
-  const { messages, getMessages, isMessagesLoading, selectedUser } = useChatStore();
-  const { authUser } = useAuthStore(); // ✅ Define authUser
-  const messageEndRef = useRef(null);  // ✅ Define ref for scrolling
+  const {
+    messages,
+    getMessages,
+    isMessagesLoading,
+    selectedUser,
+    subscribeToMessages,
+    unsubscribeFromMessages,
+    subscribeToTyping,
+    unsubscribeFromTyping,
+  } = useChatStore();
+  const { authUser } = useAuthStore();
+  const messageEndRef = useRef(null);
 
   useEffect(() => {
-    if (selectedUser?._id) {
-      getMessages(selectedUser._id);
-    }
+    if (selectedUser?._id) getMessages(selectedUser._id);
   }, [selectedUser?._id, getMessages]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
-    if (messageEndRef.current) {
-      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    if (!selectedUser?._id) return;
+
+    subscribeToMessages();
+    subscribeToTyping();
+
+    return () => {
+      unsubscribeFromMessages();
+      unsubscribeFromTyping();
+    };
+  }, [
+    selectedUser?._id,
+    subscribeToMessages,
+    unsubscribeFromMessages,
+    subscribeToTyping,
+    unsubscribeFromTyping,
+  ]);
+
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   if (isMessagesLoading) {
@@ -56,9 +78,7 @@ const ChatContainer = () => {
               </div>
             </div>
             <div className="chat-header mb-1">
-              <time className="text-xs opacity-50 ml-1">
-                {formatMessageTime(message.createdAt)}
-              </time>
+              <time className="text-xs opacity-50 ml-1">{formatMessageTime(message.createdAt)}</time>
             </div>
             <div className="chat-bubble flex flex-col">
               {message.image && (
@@ -74,7 +94,6 @@ const ChatContainer = () => {
         ))}
         <div ref={messageEndRef} />
       </div>
-
       <MessageInput />
     </div>
   );

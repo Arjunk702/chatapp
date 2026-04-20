@@ -3,12 +3,8 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
 
 const ChatHeader = () => {
-  const { selectedUser, setSelectedUser } = useChatStore();
+  const { selectedUser, setSelectedUser, isSelectedUserTyping } = useChatStore();
   const { onlineUsers } = useAuthStore();
-
-  // Debugging logs
-  console.log("selectedUser:", selectedUser);
-  console.log("onlineUsers:", onlineUsers);
 
   // Prevent rendering if no user is selected
   if (!selectedUser) return null;
@@ -26,7 +22,11 @@ const ChatHeader = () => {
           <div>
             <h3 className="font-medium">{selectedUser?.fullName || "Unknown User"}</h3>
             <p className="text-sm text-base-content/70">
-              {onlineUsers?.includes(selectedUser?._id) ? "Online" : "Offline"}
+              {isSelectedUserTyping
+                ? "Typing..."
+                : onlineUsers?.includes(selectedUser?._id)
+                  ? "Online"
+                  : "Offline"}
             </p>
           </div>
         </div>

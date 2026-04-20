@@ -9,6 +9,7 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  isSelectedUserTyping: false,
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -48,10 +49,19 @@ export const useChatStore = create((set, get) => ({
     if (!selectedUser) return;
 
     const socket = useAuthStore.getState().socket;
+    if (!socket) return;
 
+    socket.off("newMessage");
     socket.on("newMessage", (newMessage) => {
-      const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id;
-      if (!isMessageSentFromSelectedUser) return;
+      const senderId = newMessage?.senderId?.toString?.() ?? String(newMessage?.senderId ?? "");
+      const receiverId = newMessage?.receiverId?.toString?.() ?? String(newMessage?.receiverId ?? "");
+      const selectedUserId = selectedUser._id?.toString?.() ?? String(selectedUser._id ?? "");
+
+      const belongsToOpenChat = senderId === selectedUserId || receiverId === selectedUserId;
+      if (!belongsToOpenChat) return;
+
+      const alreadyInState = get().messages.some((m) => m._id === newMessage._id);
+      if (alreadyInState) return;
 
       set({
         messages: [...get().messages, newMessage],
@@ -61,8 +71,42 @@ export const useChatStore = create((set, get) => ({
 
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
+    if (!socket) return;
     socket.off("newMessage");
   },
 
-  setSelectedUser: (selectedUser) => set({ selectedUser }),
+  subscribeToTyping: () => {
+    const { selectedUser } = get();
+    if (!selectedUser) return;
+
+    const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+
+    socket.off("typing");
+    socket.off("stopTyping");
+
+    socket.on("typing", ({ from }) => {
+      const fromId = from?.toString?.() ?? String(from ?? "");
+      const selectedUserId = selectedUser._id?.toString?.() ?? String(selectedUser._id ?? "");
+      if (fromId !== selectedUserId) return;
+      set({ isSelectedUserTyping: true });
+    });
+
+    socket.on("stopTyping", ({ from }) => {
+      const fromId = from?.toString?.() ?? String(from ?? "");
+      const selectedUserId = selectedUser._id?.toString?.() ?? String(selectedUser._id ?? "");
+      if (fromId !== selectedUserId) return;
+      set({ isSelectedUserTyping: false });
+    });
+  },
+
+  unsubscribeFromTyping: () => {
+    const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+    socket.off("typing");
+    socket.off("stopTyping");
+    set({ isSelectedUserTyping: false });
+  },
+
+  setSelectedUser: (selectedUser) => set({ selectedUser, isSelectedUserTyping: false }),
 }));

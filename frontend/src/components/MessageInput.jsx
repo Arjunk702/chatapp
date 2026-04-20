@@ -1,13 +1,33 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
 import { Image, Send, X } from "lucide-react";
 import toast from "react-hot-toast";
+import { useAuthStore } from "../store/useAuthStore";
 
 const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
-  const { sendMessage } = useChatStore();
+  const typingTimeoutRef = useRef(null);
+  const isTypingRef = useRef(false);
+
+  const { sendMessage, selectedUser } = useChatStore();
+  const { socket, authUser } = useAuthStore();
+
+  const emitStopTyping = () => {
+    if (!socket || !selectedUser?._id || !authUser?._id) return;
+    if (!isTypingRef.current) return;
+    socket.emit("stopTyping", { to: selectedUser._id, from: authUser._id });
+    isTypingRef.current = false;
+  };
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      emitStopTyping();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -33,6 +53,9 @@ const MessageInput = () => {
     if (!text.trim() && !imagePreview) return;
 
     try {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      emitStopTyping();
+
       await sendMessage({
         text: text.trim(),
         image: imagePreview,
@@ -76,7 +99,22 @@ const MessageInput = () => {
             className="w-full input input-bordered rounded-lg input-sm sm:input-md"
             placeholder="Type a message..."
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              const nextValue = e.target.value;
+              setText(nextValue);
+
+              if (!socket || !selectedUser?._id || !authUser?._id) return;
+
+              if (!isTypingRef.current) {
+                socket.emit("typing", { to: selectedUser._id, from: authUser._id });
+                isTypingRef.current = true;
+              }
+
+              if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+              typingTimeoutRef.current = setTimeout(() => {
+                emitStopTyping();
+              }, 900);
+            }}
           />
           <input
             type="file"

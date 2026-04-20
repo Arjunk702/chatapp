@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import cloudinary from "../lib/cloudinary.js";
+import { io } from "../lib/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
     try {
@@ -39,7 +40,7 @@ export const getMessages = async (req, res) => {
                 { senderId: myId, receiverId: userToChatId },
                 { senderId: userToChatId, receiverId: myId }
             ]
-        });
+        }).sort({ createdAt: 1 });
 
         res.status(200).json(messages);
     } catch (error) {
@@ -68,7 +69,9 @@ export const sendMessage = async (req, res) => {
         });
         await newMessage.save();
 
-        // TODO: realtime functionality with socket.io
+        // Realtime: deliver message to both participants (supports multi-device)
+        io.to(receiverId.toString()).emit("newMessage", newMessage);
+        io.to(senderId.toString()).emit("newMessage", newMessage);
 
         res.status(201).json(newMessage);
     } catch (error) {
