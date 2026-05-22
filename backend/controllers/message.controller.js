@@ -69,9 +69,18 @@ export const sendMessage = async (req, res) => {
         });
         await newMessage.save();
 
+        // Convert Mongoose document to a plain JSON-safe object before emitting via Socket.IO
+        // This avoids serialization issues with MongoDB ObjectIds and Mongoose internals
+        const messageJSON = newMessage.toObject();
+        messageJSON._id = messageJSON._id.toString();
+        messageJSON.senderId = messageJSON.senderId.toString();
+        messageJSON.receiverId = messageJSON.receiverId.toString();
+        messageJSON.createdAt = messageJSON.createdAt?.toISOString();
+        messageJSON.updatedAt = messageJSON.updatedAt?.toISOString();
+
         // Realtime: deliver message to both participants (supports multi-device)
-        io.to(receiverId.toString()).emit("newMessage", newMessage);
-        io.to(senderId.toString()).emit("newMessage", newMessage);
+        io.to(receiverId.toString()).emit("newMessage", messageJSON);
+        io.to(senderId.toString()).emit("newMessage", messageJSON);
 
         res.status(201).json(newMessage);
     } catch (error) {
