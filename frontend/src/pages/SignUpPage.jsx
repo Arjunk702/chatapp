@@ -1,169 +1,408 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
-import { EyeOff,Eye, Lock, Mail, MessageSquare, Loader2 } from 'lucide-react';
-import { User } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import AuthImagePattern from '../components/AuthImagePattern';
 import toast from 'react-hot-toast';
+import AuthHeroGraphic from '../components/AuthHeroGraphic';
+
+/* ─── Styles mirror the reference HTML exactly ──────────────────────────────── */
+const styles = {
+  page: {
+    minHeight: '100dvh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    padding: 'calc(1.25rem + 4rem) 1rem 1.25rem',
+    background: '#f8f9ff',
+    backgroundImage:
+      'radial-gradient(at 0% 0%, hsla(220,100%,95%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(210,100%,90%,1) 0, transparent 50%)',
+    fontFamily: "'Inter', sans-serif",
+    overflow: 'hidden',
+    position: 'relative',
+    gap: '1rem',
+  },
+  blob1: {
+    position: 'absolute',
+    top: '15%',
+    left: '-1rem',
+    width: '3rem',
+    height: '3rem',
+    background: 'rgba(164,201,255,0.3)',
+    borderRadius: '9999px',
+    filter: 'blur(20px)',
+    animation: 'pulse-soft 3s ease-in-out infinite',
+  },
+  blob2: {
+    position: 'absolute',
+    bottom: '15%',
+    right: '-1rem',
+    width: '4rem',
+    height: '4rem',
+    background: 'rgba(180,197,255,0.4)',
+    borderRadius: '9999px',
+    filter: 'blur(20px)',
+    animation: 'pulse-soft 3s ease-in-out infinite 1s',
+  },
+  brand: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    marginTop: '2rem',
+  },
+  brandIcon: {
+    width: '2.5rem',
+    height: '2.5rem',
+    background: '#2563eb',
+    borderRadius: '0.75rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 4px 14px rgba(0,74,198,0.35)',
+  },
+  brandName: {
+    fontSize: '1.5rem',
+    fontWeight: 700,
+    color: '#004ac6',
+    letterSpacing: '-0.02em',
+    lineHeight: 1,
+  },
+  hero: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.5rem',
+    textAlign: 'center',
+    marginTop: '0.1rem',
+  },
+  headline: {
+    fontSize: '1.5rem',
+    fontWeight: 700,
+    color: '#0b1c30',
+    letterSpacing: '-0.02em',
+    lineHeight: '2rem',
+    margin: 0,
+  },
+  subline: {
+    fontSize: '1rem',
+    color: '#434655',
+    lineHeight: '1.5rem',
+    margin: 0,
+    padding: '0 1.5rem',
+  },
+  form: {
+    width: '100%',
+    maxWidth: '24rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+    marginTop: '0.35rem',
+  },
+  fieldLabel: {
+    display: 'block',
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    color: '#0b1c30',
+    marginBottom: '0.375rem',
+  },
+  inputWrap: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  iconLeft: {
+    position: 'absolute',
+    left: '1rem',
+    color: '#737686',
+    pointerEvents: 'none',
+    display: 'flex',
+  },
+  input: {
+    width: '100%',
+    height: '3.25rem',
+    padding: '0 1rem 0 2.75rem',
+    border: '1.5px solid #d3e4fe',
+    borderRadius: '9999px',
+    background: 'rgba(211,228,254,0.25)',
+    fontSize: '0.9375rem',
+    color: '#0b1c30',
+    outline: 'none',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    boxSizing: 'border-box',
+  },
+  inputFocus: {
+    borderColor: '#004ac6',
+    boxShadow: '0 0 0 3px rgba(0,74,198,0.12)',
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: '1rem',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#737686',
+    display: 'flex',
+    padding: 0,
+  },
+  primaryBtn: {
+    width: '100%',
+    height: '3.5rem',
+    background: '#004ac6',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '9999px',
+    fontSize: '0.9375rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
+    boxShadow: '0 4px 20px rgba(0,74,198,0.25)',
+    transition: 'transform 0.15s, box-shadow 0.15s',
+    marginTop: '0.25rem',
+  },
+  secondaryBtn: {
+    width: '100%',
+    maxWidth: '24rem',
+    height: '3.5rem',
+    background: 'rgba(255,255,255,0.75)',
+    color: '#004ac6',
+    border: '1px solid rgba(211,228,254,0.95)',
+    borderRadius: '9999px',
+    fontSize: '0.9375rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 10px 30px rgba(11,28,48,0.08)',
+    transition: 'transform 0.15s, box-shadow 0.15s',
+    textDecoration: 'none',
+  },
+  footer: {
+    fontSize: '0.8125rem',
+    color: '#737686',
+    textAlign: 'center',
+  },
+  link: {
+    color: '#004ac6',
+    fontWeight: 600,
+    textDecoration: 'none',
+    marginLeft: '0.25rem',
+  },
+  termsText: {
+    fontSize: '0.75rem',
+    color: '#737686',
+    textAlign: 'center',
+    padding: '0 2rem',
+    lineHeight: '1.4',
+  },
+  termsLink: {
+    color: '#004ac6',
+    fontWeight: 600,
+    textDecoration: 'none',
+  },
+};
+
+const FocusInput = ({ style, ...props }) => {
+  const [focused, setFocused] = useState(false);
+  return (
+    <input
+      style={{ ...style, ...(focused ? styles.inputFocus : {}) }}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      {...props}
+    />
+  );
+};
 
 const SignUpPage = () => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({ fullName: '', email: '', password: '' });
+  const { signup, isSigningUp } = useAuthStore();
+  const [errors, setErrors] = useState({});
 
-    const [showPassword,setShowPassword] =useState(false);
-    const [formData,setFormData] = useState({
-      fullName : "",
-      email : "",
-      password : "",
+  const validateForm = () => {
+    const next = {};
+    if (!formData.fullName.trim()) next.fullName = 'Full name is required';
+    if (!formData.email.trim()) next.email = 'Email is required';
+    if (formData.email.trim() && !/^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/.test(formData.email))
+      next.email = 'Invalid email format';
+    if (!formData.password.trim()) next.password = 'Password is required';
+    if (formData.password.trim() && formData.password.length < 6)
+      next.password = 'Password must be at least 6 characters';
 
-    })
-    const {signup, isSigningUp} = useAuthStore();
+    setErrors(next);
+    const first = Object.values(next)[0];
+    if (first) toast.error(first);
+    return Object.keys(next).length === 0;
+  };
 
-    const validateForm = () =>{
-      if  (!formData.fullName.trim()) return toast.error("Full name is required")
-      if  (!formData.email.trim()) return toast.error("Email is required")
-        if (!/^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$/.test(formData.email)) {
-          return toast.error("Invalid email format");
-        }
-        
-      if  (!formData.password.trim()) return toast.error("Password is required")
-      if  (formData.password.length < 6) return toast.error("Password must be at least 6 characters")
-        return true;
-    }
-    const handleSubmit = (e) =>{
-      e.preventDefault()
-
-      const success = validateForm();
-
-      if (success === true) signup(formData)
-    }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validateForm() === true) signup(formData);
+  };
 
   return (
-    <div className='min-h-screen grid lg:grid-cols-2 bg-base-100'>
-      {/* left side */}
-      <div className='flex flex-col justify-center items-center p-6 sm:p-12'>
-        <div className='w-full max-w-md space-y-8'>
-          {/* logo */}
-          <div className='flex flex-col items-center gap-2 group'>
-            <div className='w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg shadow-primary/30 group-hover:shadow-primary/50 transition-all duration-300 group-hover:scale-105'>
-          <MessageSquare className='size-8 text-white'/>
+    <>
+      <div style={styles.page}>
+        {/* Decorative blobs */}
+        <div style={styles.blob1} />
+        <div style={styles.blob2} />
 
-            </div>
-            <h1 className='text-3xl font-bold mt-4 bg-gradient-to-r from-base-content to-base-content/70 bg-clip-text text-transparent'>Create Account</h1>
-            <p className='text-base-content/60 text-sm'>Get started with your free account</p>
+        <AuthHeroGraphic />
 
-          </div>
-
+        {/* Hero copy */}
+        <div style={styles.hero}>
+          <h1 style={styles.headline}>Create your account</h1>
+          <p style={styles.subline}>Get started with your free account today</p>
         </div>
-        <form onSubmit={handleSubmit} className='space-y-5 w-full max-w-sm'>
-          <div className='form-control'>
-            <label className='label'>
-              <span className='label-text font-medium text-sm'>Full Name</span>
-            </label>
-            <div className='relative'>
-              <div className='absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10'>
-                <User className = "size-5 text-base-content/50"/>
 
-              </div>
-              <input 
-              type="text"
-              className={`input input-bordered w-full pl-12 h-12 bg-base-200/50 focus:bg-base-200 transition-all duration-200 rounded-xl`}
-              placeholder='Enter Your Name'
-              value={formData.fullName}
-              onChange={(e)=>setFormData({...formData,fullName:e.target.value})}
-               />
-
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={styles.form} aria-busy={isSigningUp}>
+          {/* Full Name */}
+          <div>
+            <label style={styles.fieldLabel}>Full Name</label>
+            <div style={styles.inputWrap}>
+              <span style={styles.iconLeft}>
+                <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>
+                  person
+                </span>
+              </span>
+              <FocusInput
+                type="text"
+                style={styles.input}
+                placeholder="Enter your name"
+                value={formData.fullName}
+                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                disabled={isSigningUp}
+              />
             </div>
-
+            {errors.fullName ? (
+              <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: '#ba1a1a' }}>
+                {errors.fullName}
+              </div>
+            ) : null}
           </div>
-          <div className='form-control'>
-            <label className='label'>
-              <span className='label-text font-medium text-sm'>Email</span>
-            </label>
-            <div className='relative'>
-              <div className='absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10'>
-                <Mail className = "size-5 text-base-content/50"/>
 
+          {/* Email */}
+          <div>
+            <label style={styles.fieldLabel}>Email</label>
+            <div style={styles.inputWrap}>
+              <span style={styles.iconLeft}>
+                <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>
+                  mail
+                </span>
+              </span>
+              <FocusInput
+                type="text"
+                style={styles.input}
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                disabled={isSigningUp}
+              />
+            </div>
+            {errors.email ? (
+              <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: '#ba1a1a' }}>
+                {errors.email}
               </div>
-              <input 
-              type="text"
-              className={`input input-bordered w-full pl-12 h-12 bg-base-200/50 focus:bg-base-200 transition-all duration-200 rounded-xl`}
-              placeholder='Enter Your Email'
-              value={formData.email}
-              onChange={(e)=>setFormData({...formData,email:e.target.value})}
-               />
+            ) : null}
+          </div>
 
+          {/* Password */}
+          <div>
+            <label style={styles.fieldLabel}>Password</label>
+            <div style={styles.inputWrap}>
+              <span style={styles.iconLeft}>
+                <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>
+                  lock
+                </span>
+              </span>
+              <FocusInput
+                type={showPassword ? 'text' : 'password'}
+                style={{ ...styles.input, paddingRight: '3rem' }}
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                disabled={isSigningUp}
+              />
+              <button
+                type="button"
+                style={styles.eyeBtn}
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={isSigningUp}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
-            </div>
-            <div className='form-control'>
-            <label className='label'>
-              <span className='label-text font-medium text-sm'>Password</span>
-            </label>
-<div className='relative'>
-              <div className='absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10'>
-                <Lock className = "size-5 text-base-content/50"/>
-
+            {errors.password ? (
+              <div style={{ marginTop: '0.35rem', fontSize: '0.75rem', color: '#ba1a1a' }}>
+                {errors.password}
               </div>
-              <input 
-              type={showPassword ? "text" : "password"}
-              className={`input input-bordered w-full pl-12 h-12 bg-base-200/50 focus:bg-base-200 transition-all duration-200 rounded-xl`}
-              placeholder='.........'
-              value={formData.password}
-              onChange={(e)=>setFormData({...formData,password:e.target.value})}
-               />
-               <button
-                 type='button'
-                 className='absolute inset-y-0 right-0 pr-4 flex items-center hover:bg-base-200/50 rounded-r-xl transition-colors z-10'
-                 onClick={()=>setShowPassword(!showPassword)}
-                 >
-                  {showPassword ? (
-                    <EyeOff className='size-5 text-base-content/50'/>
-                  ) : (
-                    <Eye className="size-5 text-base-content/50"/>
-                  )}
+            ) : null}
+          </div>
 
-                 </button>
-
-            </div>
-            </div>
-            <button
-            type='submit'
-            className='btn btn-primary w-full h-12 mt-2 rounded-xl font-semibold shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:scale-[1.02] transition-all duration-200' disabled={isSigningUp}
-
-            >
-              {isSigningUp ? (
-                <>
-                <Loader2 className='size-5 animate-spin'/>
-                Creating account...
-                </>
-              ) : (
-                "Create Account"
-              )}
-            </button>
+          {/* Submit */}
+          <button
+            type="submit"
+            style={styles.primaryBtn}
+            disabled={isSigningUp}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.02)';
+              e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,74,198,0.35)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,74,198,0.25)';
+            }}
+          >
+            {isSigningUp ? (
+              <>
+                <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                Creating account…
+              </>
+            ) : (
+              <>
+                Get Started
+                <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>
+                  arrow_forward
+                </span>
+              </>
+            )}
+          </button>
         </form>
-        <div className="text-center mt-4">
-          <p className='text-base-content/70 text-sm'>
-          Already have an account ?{""} 
-          <Link to="/login" className='link link-primary font-medium ml-1'>
-          Sign in
-          </Link>
-          
-          </p>
-        </div>
+
+        <Link
+          to="/login"
+          style={{
+            ...styles.secondaryBtn,
+            ...(isSigningUp ? { pointerEvents: 'none', opacity: 0.6 } : {}),
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.01)';
+            e.currentTarget.style.boxShadow = '0 14px 34px rgba(11,28,48,0.10)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 10px 30px rgba(11,28,48,0.08)';
+          }}
+        >
+          Log In
+        </Link>
+
+        {/* Terms */}
+        <p style={styles.termsText}>
+          By tapping Get Started, you agree to our{' '}
+          <a href="#" style={styles.termsLink}>Terms of Service</a> and{' '}
+          <a href="#" style={styles.termsLink}>Privacy Policy</a>.
+        </p>
+
+        <div style={{ height: '0.5rem' }} />
       </div>
+    </>
+  );
+};
 
-      {/* right side*/}
-
-
-      <AuthImagePattern
-      title = "Join our community"
-      subtitle="Connect with friends, share moments , and stay in touch with your loved ones"
-      
-       />
-      
-
-
-    </div>
-    
-  )
-}
-
-export default SignUpPage
+export default SignUpPage;
